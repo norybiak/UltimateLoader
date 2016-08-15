@@ -19,24 +19,28 @@ Currently accepted textures file types:
 ## Using UltimateLoader
 
 There are two methods you can use to load objects. 
-* UltimateLoader.load(path, callback)
-* UltimateLoader.multiload(path, callback)
+* UltimateLoader.load(path, callback);
+* UltimateLoader.multiload(arrayOfPaths, callback);
 
-Each method functions the same, except that multiloader will return an array of referemces to all the loaded objects in order.
+Each method functions the same except that multiloader will return an array of references to all the loaded objects in order of urls provided.
 
-```javacsript
+### UltimateLoader.load(path, callback);
+```javascript
 UltimateLoader.load('path/to/model', function(object)
 {
-  // Do work....
+  // Do work...
   
   //Example work
   object.position.set(x, y, z);
   scene.add(object);
   
-  // Do more work....
+  // Do more work...
 });
 ```
 
+
+
+### UltimateLoader.multiload(arrayOfPaths, callback);
 ```javascript
 var objectUrls =
 [
