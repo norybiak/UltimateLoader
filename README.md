@@ -24,6 +24,8 @@ There are two methods you can use to load objects.
 
 Each method functions the same except that multiloader will return an array of references to all the loaded objects in order of urls provided.
 
+UltimateLoader will place each object into a queue and load them incrementally. 
+
 ### UltimateLoader.load(path, callback);
 ```javascript
 UltimateLoader.load('path/to/model', function(object)
