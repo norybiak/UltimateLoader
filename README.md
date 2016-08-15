@@ -12,18 +12,18 @@ Each method functions the same, except that multiloader will return an array of 
 
 
 Currently accepted object file types:
-1. .obj
-2. .json
-3. .dae
-4. .gltf
+* .obj
+* .json
+* .dae
+* .gltf
 
-IMPORTANT: Your objects aren't guaranteed  to load correctly. Some models may not have been converted correctly or weren't setup right.
+**IMPORTANT:** Your objects aren't guaranteed  to load correctly. Some models may not have been converted correctly or weren't setup right.
 
 Currently accepted textures file types:
-1. .jpg
-2. .png
+* .jpg
+* .png
 
-IMPORTANT: Your texture must be named that same as the object file and placed in the same directory.
+**IMPORTANT:** Your texture must be named that same as the object file and placed in the same directory.
 
 
 How to use each method:
