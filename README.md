@@ -1,16 +1,7 @@
 # UltimateLoader
 A tool to load objects of various types for Three.js in AltspaceVR
 
-
-## Using UltimateLoader
-
-There are two methods you can use to load objects. 
-1. UltimateLoader.load(path, callback)
-2. UltimateLoader.multiload(path, callback)
-
-Each method functions the same, except that multiloader will return an array of referemces to all the loaded objects in order.
-
-
+## Files types
 Currently accepted object file types:
 * .obj
 * .json
@@ -25,8 +16,13 @@ Currently accepted textures file types:
 
 **IMPORTANT:** Your texture must be named that same as the object file and placed in the same directory.
 
+## Using UltimateLoader
 
-How to use each method:
+There are two methods you can use to load objects. 
+1. UltimateLoader.load(path, callback)
+2. UltimateLoader.multiload(path, callback)
+
+Each method functions the same, except that multiloader will return an array of referemces to all the loaded objects in order.
 
 ```javacsript
 UltimateLoader.load('path/to/model', function(object)
