@@ -8,10 +8,14 @@ Currently accepted object file types:
 * .dae
 * .gltf
 
+Currently accepted image file types (will be mapped to plane):
+* .jpeg / .jpg
+* .png
+
 **IMPORTANT:** Your objects aren't guaranteed  to load correctly. Some models may not have been converted correctly or weren't setup right.
 
 Currently accepted textures file types:
-* .jpg
+* .jpeg / .jpg
 * .png
 
 **IMPORTANT:** Your texture must be named that same as the object file and placed in the same directory.
