@@ -25,11 +25,11 @@ var UltimateLoader = UltimateLoader || {};
 	
 	var nextCallback;
 	
-	var useQueue = false;
+	main.queue = false;
 
 	main.load = function(objUrl, callback)
 	{
-		if (useQueue)
+		if (main.queue)
 		{
 			queue(objUrl, callback);
 			
@@ -63,7 +63,7 @@ var UltimateLoader = UltimateLoader || {};
 		
 		for (var i = 0; i < objUrls.length; i++)
 		{
-			if (useQueue)
+			if (main.queue)
 			{
 				queue(objUrls[i], callbackFunction);
 			}
@@ -282,7 +282,7 @@ var UltimateLoader = UltimateLoader || {};
 
 		file.callback(object);
 		
-		if (useQueue)
+		if (main.queue)
 		{
 			dequeue();
 		}	
