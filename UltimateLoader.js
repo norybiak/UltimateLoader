@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js (for Altspace)
  * 
  * @Author NorybiaK
- * version 1.1
+ * version 1.2
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -25,8 +25,18 @@ var UltimateLoader = UltimateLoader || {};
 	
 	var nextCallback;
 	
+   /** 
+	* If true, the objects will load incrementally. Loading time is drastically increased.
+	*
+    */
 	main.queue = false;
 
+   /** 
+	*	UltimateLoader.load()
+	*	Load an object and then run the callback function.
+	* 
+	*	The object is returned via the callback.
+    */
 	main.load = function(objUrl, callback)
 	{
 		if (main.queue)
@@ -45,6 +55,12 @@ var UltimateLoader = UltimateLoader || {};
 		}
 	}
 	
+   /** 
+	*	UltimateLoader.multiload()
+	*	Load an array of objects and run the callback function.
+	*
+	* 	An array of objects is returned (in order of the objects passed in) via the callback.
+    */
 	main.multiload = function(objUrls, callback)
 	{
 		var objectsLoaded = [];
@@ -80,11 +96,21 @@ var UltimateLoader = UltimateLoader || {};
 		start();
 	}
 	
+   /** 
+	*	queue()
+	*	Add object reference to the queue list.
+	*
+    */
 	function queue(objUrl, callback)
 	{
 		queueList.push([objUrl, callback]);
 	}
 
+   /** 
+	*	dequeue()
+	*	Load the next object in the queue.
+	*
+    */
 	function dequeue()
 	{
 		//Nothing to get! Empty queueList
@@ -101,6 +127,11 @@ var UltimateLoader = UltimateLoader || {};
 		load(object);
 	}
 	
+   /** 
+	*	start()
+	*	Helper function to determine if we need to dequeue.
+	*
+    */
 	function start()
 	{
 		if (next == 0)
@@ -109,6 +140,12 @@ var UltimateLoader = UltimateLoader || {};
 		}
 	}
 	
+   /** 
+	*	load()
+	*	Check the object file extension and use the correct loader.
+	*	If the object file already exists, clone in.
+	*
+    */
 	function load(object)
 	{
 		var url = object[0];
@@ -125,7 +162,7 @@ var UltimateLoader = UltimateLoader || {};
 		var name = file.name;
 		if (listOfObjectFilesLoaded[name])
 		{
-			file.callback(loaded.clone());
+			file.callback(listOfObjectFilesLoaded[name].clone());
 			console.log("Ultimate Loader: Object is already loaded ... cloning!");
 		}
 		else
@@ -168,6 +205,12 @@ var UltimateLoader = UltimateLoader || {};
 		}
 	}
 	
+   /** 
+	*	getFileInfo()
+	*	Sets the baseUrl and splits the filename into an object called info. 
+	*	Info contains the name, extention, and the baseUrl.
+	*
+    */
 	function getFileInfo(path)
 	{
 		var newPath = path.slice(0, path.lastIndexOf('/') + 1);
@@ -184,6 +227,11 @@ var UltimateLoader = UltimateLoader || {};
 		return info;	
 	}
 
+   /** 
+	*	loadOBJ()
+	*	.obj file found, attempt to load the .obj and .mtl.
+	*
+    */
 	function loadOBJ(file)
 	{
 		var obj = file.name + '.obj';
@@ -213,6 +261,11 @@ var UltimateLoader = UltimateLoader || {};
 		});	
 	}
 
+   /** 
+	*	loadJSON()
+	*	.json file found, attempt to load it.
+	*
+    */
 	function loadJSON(file)
 	{
 		var loader = new THREE.ObjectLoader();
@@ -223,7 +276,12 @@ var UltimateLoader = UltimateLoader || {};
 			handleOnLoad(object, file);
 		}, onProgress, onError);
 	}
-
+	
+   /** 
+	*	loadCollada()
+	*	.dae file found, attempt to load it.
+	*
+    */
 	function loadCollada(file)
 	{
 		var loader = new THREE.ColladaLoader();
@@ -236,7 +294,13 @@ var UltimateLoader = UltimateLoader || {};
 			handleOnLoad(object, file);
 		}, onProgress, onError);
 	}
-
+	
+   /** 
+	*	loadgltf()
+	*	.gltf file found, attempt to load it.
+	*	This one is iffy and doesn't have full proper implementaion. May not work properly.
+	*
+    */
 	function loadglTF(file)
 	{
 		var loader = new THREE.glTFLoader();
@@ -251,6 +315,12 @@ var UltimateLoader = UltimateLoader || {};
 		
 	}
 	
+   /** 
+	*	loadImage()
+	*	.png or .jpeg file found, attempt to load it.
+	*	Adds texture to a plane. User may change the default plane transform via callback.
+	*
+    */
 	function loadImage(file)
 	{
 		var loader = new THREE.TextureLoader();
@@ -276,6 +346,11 @@ var UltimateLoader = UltimateLoader || {};
 		
 	}
 
+   /** 
+	*	handleOnLoad()
+	*	Add the object into the loaded array and run the callback.
+	*
+    */
 	function handleOnLoad(object, file)
 	{
 		listOfObjectFilesLoaded[file.name] = object;
