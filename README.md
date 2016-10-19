@@ -28,7 +28,7 @@ There are two methods you can use to load objects.
 
 Each method functions the same except that multiloader will return an array of references to all the loaded objects in order of urls provided.
 
-UltimateLoader will place each object into a queue and load them incrementally. 
+If you need to imcrementally add objects, you can set UltimateLoader.queue to true. This will put all objects into a queue and load them one at a time which slows the entire loading process down. It's recommended to keep it false.
 
 ### UltimateLoader.load(path, callback);
 ```javascript
