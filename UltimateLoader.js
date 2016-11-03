@@ -18,12 +18,8 @@ var UltimateLoader = UltimateLoader || {};
 	var next = 0;
 	var lastStop;
 	
-	var isCurrentlyLoading = false;
-	
 	var crossOrigin = 'anonymous';
 	var baseUrl = '';
-	
-	var nextCallback;
 	
    /** 
 	* If true, the objects will load incrementally. Loading time is drastically increased.
@@ -66,12 +62,12 @@ var UltimateLoader = UltimateLoader || {};
 		var objectsLoaded = [];
 		var totalLoaded = 0;
 		
-		var callbackFunction = function(object)
+		var callbackFunction = function(file)
 		{
-			objectsLoaded.push(object);
+			objectsLoaded[file.i] = file.object;
 			totalLoaded++;
 			
-			if (totalLoaded >= objUrls.length)
+			if (totalLoaded == objUrls.length)
 			{
 				callback(objectsLoaded);
 			}
@@ -81,11 +77,15 @@ var UltimateLoader = UltimateLoader || {};
 		{
 			if (main.queue)
 			{
-				queue(objUrls[i], callbackFunction);
+				queue(objUrls[i], callbackFunction, i);
+				
+				//checks if the newly queued object is next
+				//start the queue if it is
+				start();
 			}
 			else
 			{
-				var arr = [objUrls[i], callbackFunction];
+				var arr = [objUrls[i], callbackFunction, i];
 			
 				load(arr);
 			}
@@ -146,63 +146,57 @@ var UltimateLoader = UltimateLoader || {};
 	*	If the object file already exists, clone in.
 	*
     */
-	function load(object)
+	function load(arr)
 	{
-		var url = object[0];
-		var callback = object[1];
+		var url = arr[0];
+		var callback = arr[1];
 		
 		var file = getFileInfo(url);
 		file.url = url;
 		file.callback = callback;
 		
-		isCurrentlyLoading = true;
-	
-		nextCallback = callback;
-	
-		var name = file.name;
-		if (listOfObjectFilesLoaded[name])
+		//Special case for multiload.
+		if (arr[2] != null)
 		{
-			file.callback(listOfObjectFilesLoaded[name].clone());
-			console.log("Ultimate Loader: Object is already loaded ... cloning!");
+			file.i = arr[2];
 		}
-		else
+	
+		switch (file.ext)
 		{
-			switch (file.ext)
-			{
-				case "obj":
-					loadOBJ(file);
-					break;
-					
-				case "json":
-					loadJSON(file);
-					break;
-					
-				case "dae":
-					loadCollada(file);
-					break;
-					
-				case "gltf":
-					loadglTF(file);
-					break
-					
-				case "png":
-					loadImage(file);
-					break
-					
-				case "jpg":
-					loadImage(file);
-					break
-					
-				case "jpeg":
-					loadImage(file);
-					break
-					
-				default:
-					console.log("UltimateLoader: File extension -" + file.ext + "- not recognized! Object -" + file.name + "- did not load.");
-					dequeue(); //Move to the next object
-					break;
-			}
+			case "obj":
+				loadOBJ(file);
+				break;
+				
+			case "json":
+				loadJSON(file);
+				break;
+				
+			case "dae":
+				loadCollada(file);
+				break;
+				
+			case "gltf":
+				loadglTF(file);
+				break;
+				
+			case "png":
+				loadImage(file);
+				break;
+				
+			case "jpg":
+				loadImage(file);
+				break;
+				
+			case "jpeg":
+				loadImage(file);
+				break;
+				
+			default:
+				console.log("UltimateLoader: File extension -" + file.ext + "- not recognized! Object -" + file.name + "- did not load.");
+				dequeue(); //Move to the next object
+				break;
 		}
+		
 	}
 	
    /** 
@@ -255,8 +249,17 @@ var UltimateLoader = UltimateLoader || {};
 			
 			objLoader.load(obj, function (object)
 			{
-				console.log("UltimateLoader: Object " + file.name + " loaded!");
-				handleOnLoad(object, file);
+
+				object.traverse(function(child) 
+				{
+                  if (child instanceof THREE.Mesh) 
+				  {
+                      child.material.side = THREE.DoubleSide;
+                  }
+				});
+
+				file.object = object;
+				handleOnLoad(file);
 			}, onProgress, onError);
 		});	
 	}
@@ -272,8 +275,8 @@ var UltimateLoader = UltimateLoader || {};
 		
 		loader.load(file.url, function (object) 
 		{
-			console.log("UltimateLoader: Object " + file.name + " loaded!");
-			handleOnLoad(object, file);
+			file.object = object;
+			handleOnLoad(file);
 		}, onProgress, onError);
 	}
 	
@@ -290,8 +293,8 @@ var UltimateLoader = UltimateLoader || {};
 		{
 			var object = collada.scene;
 			
-			console.log("UltimateLoader: Object " + file.name + " loaded!");
-			handleOnLoad(object, file);
+			file.object = object;
+			handleOnLoad(file);
 		}, onProgress, onError);
 	}
 	
@@ -309,8 +312,8 @@ var UltimateLoader = UltimateLoader || {};
 		{
 			var object = gltf.scene;
 			
-			console.log("UltimateLoader: Object " + file.name + " loaded!");
-			handleOnLoad(object, file)
+			file.object = object;
+			handleOnLoad(file);
 		}, onProgress, onError);
 		
 	}
@@ -331,8 +334,8 @@ var UltimateLoader = UltimateLoader || {};
 			var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
 			var plane = new THREE.Mesh( geometry, material );
 	
-			console.log("UltimateLoader: Object " + file.name + " loaded!");
-			handleOnLoad(plane, file)
+			file.object = plane;
+			handleOnLoad(file);
 		}, onProgress, onError);
 	}
 	
@@ -351,16 +354,25 @@ var UltimateLoader = UltimateLoader || {};
 	*	Add the object into the loaded array and run the callback.
 	*
     */
-	function handleOnLoad(object, file)
+	function handleOnLoad(file)
 	{
-		listOfObjectFilesLoaded[file.name] = object;
+		listOfObjectFilesLoaded[file.name] = file.object;
 
-		file.callback(object);
+		if (file.i != null)
+		{
+			file.callback(file);
+		}
+		else
+		{
+			file.callback(file.object);
+		}
 		
 		if (main.queue)
 		{
 			dequeue();
 		}	
+		
+		console.log("UltimateLoader: Object " + file.name + " loaded!");
 	}
 	
 })(UltimateLoader);
