@@ -26,6 +26,14 @@ var UltimateLoader = UltimateLoader || {};
 	*
     */
 	main.queue = false;
+	
+   /** 
+	* Default size is 32 (arbitrary number that works)
+	* Depending on enclosure size, this number will need to be changed.
+	* 
+    */
+	
+	main.imageSize = 32;
 
    /** 
 	*	UltimateLoader.load()
@@ -179,6 +187,10 @@ var UltimateLoader = UltimateLoader || {};
 				loadglTF(file);
 				break;
 				
+			case "fbx":
+				loadFBX(file);
+				break;
+				
 			case "png":
 				loadImage(file);
 				break;
@@ -216,7 +228,8 @@ var UltimateLoader = UltimateLoader || {};
 		var file = path.substr(path.lastIndexOf('/') + 1);
 		
 		var s = file.split('.');
-		var info = {name: s[0], ext: s[1], baseUrl: newPath};
+
+		var info = {name: s[0], ext: s[s.length-1].toLowerCase(), baseUrl: newPath};
 		
 		return info;	
 	}
@@ -328,15 +341,32 @@ var UltimateLoader = UltimateLoader || {};
 	{
 		var loader = new THREE.TextureLoader();
 		
-		loader.load(file.url, function (texture) 
+		loader.load(file.url, function(texture) 
 		{
-			var geometry = new THREE.PlaneGeometry( 32, 20, 32 );
+			var height = (texture.image.naturalHeight / texture.image.naturalWidth) * main.imageSize;
+			var geometry = new THREE.PlaneGeometry(main.imageSize, height, main.imageSize);
 			var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
 			var plane = new THREE.Mesh( geometry, material );
-	
+			
 			file.object = plane;
 			handleOnLoad(file);
 		}, onProgress, onError);
+	}
+	
+	
+	function loadFBX(file)
+	{
+	
+		var loader = new THREE.FBXLoader();
+		
+		loader.load(file.url, function(object) 
+		{
+	
+	console.log(object);
+			file.object = object;
+			handleOnLoad(file);
+		}, onProgress, onError );
+		
 	}
 	
 	function onProgress(xhr) 
