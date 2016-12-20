@@ -248,7 +248,7 @@ var UltimateLoader = UltimateLoader || {};
 		
 		mtlLoader.setPath(file.baseUrl);
 		mtlLoader.setBaseUrl(file.baseUrl);
-		mtlLoader.setCrossOrigin = crossOrigin;
+		mtlLoader.setCrossOrigin(crossOrigin);
 		
 		mtlLoader.load(mtl, function(materials) 
 		{
@@ -258,8 +258,7 @@ var UltimateLoader = UltimateLoader || {};
 			
 			objLoader.setMaterials(materials);
 			objLoader.setPath(file.baseUrl);
-			objLoader.setCrossOrigin = crossOrigin;
-			
+
 			objLoader.load(obj, function (object)
 			{
 
