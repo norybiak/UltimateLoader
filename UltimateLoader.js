@@ -247,7 +247,7 @@ var UltimateLoader = UltimateLoader || {};
 		var mtlLoader = new THREE.MTLLoader();
 		
 		mtlLoader.setPath(file.baseUrl);
-		mtlLoader.setBaseUrl(file.baseUrl);
+		mtlLoader.setTexturePath ? mtlLoader.setTexturePath(file.baseUrl) : mtlLoader.setBaseUrl(file.baseUrl);
 		mtlLoader.setCrossOrigin(crossOrigin);
 		
 		mtlLoader.load(mtl, function(materials) 
