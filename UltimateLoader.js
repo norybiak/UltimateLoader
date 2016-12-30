@@ -342,12 +342,7 @@ var UltimateLoader = UltimateLoader || {};
 		
 		loader.load(file.url, function(texture) 
 		{
-			var height = (texture.image.naturalHeight / texture.image.naturalWidth) * main.imageSize;
-			var geometry = new THREE.PlaneGeometry(main.imageSize, height, main.imageSize);
-			var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
-			var plane = new THREE.Mesh( geometry, material );
-			
-			file.object = plane;
+			file.object = texture;
 			handleOnLoad(file);
 		}, onProgress, onError);
 	}
@@ -360,11 +355,9 @@ var UltimateLoader = UltimateLoader || {};
 		
 		loader.load(file.url, function(object) 
 		{
-	
-	console.log(object);
 			file.object = object;
 			handleOnLoad(file);
-		}, onProgress, onError );
+		}, onProgress, onError() );
 		
 	}
 	
@@ -375,7 +368,7 @@ var UltimateLoader = UltimateLoader || {};
 
 	function onError(xhr) 
 	{ 
-		
+		console.log("There was an error loading your object");	
 	}
 
    /** 
