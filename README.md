@@ -18,7 +18,21 @@ Currently accepted textures file types:
 * .jpeg / .jpg
 * .png
 
-**IMPORTANT:** Your texture must be named that same as the object file and placed in the same directory.
+**IMPORTANT:** Your .mtl files must be named that same as the object file and placed in the same directory.
+
+## Config
+bool `UltimateLoader.useQueue`  
+If true, the objects will load incrementally. Default is false.
+
+**WARNING:** Loading time is drastically increased if queue is used. This is for special cases when you really need to load the objects incrementally.
+
+bool `UltimateLoader.loadImagesOnPlane`  
+If true, images will be loaded onto a plane. Default is false.
+
+int `UltimateLoader.imageSize`  
+The initial size of the image when loading onto a plane. Default is 32. 
+
+**Note**: The imageSize is used when creating a THREE.PlaneGeometry. If loadImagesOnPlane is false, imageSize is ignored. The image's aspect ratio will be maintained.
 
 ## Using UltimateLoader
 
@@ -27,8 +41,6 @@ There are two methods you can use to load objects.
 * UltimateLoader.multiload(arrayOfPaths, callback);
 
 Each method functions the same except that multiloader will return an array of references to all the loaded objects in order of urls provided.
-
-If you need to imcrementally add objects, you can set UltimateLoader.queue to true. This will put all objects into a queue and load them one at a time which slows the entire loading process down. It's recommended to keep it false.
 
 ### UltimateLoader.load(path, callback);
 ```javascript
@@ -44,8 +56,6 @@ UltimateLoader.load('path/to/model', function(object)
 });
 ```
 
-
-
 ### UltimateLoader.multiload(arrayOfPaths, callback);
 ```javascript
 var objectUrls =
@@ -59,7 +69,6 @@ var loadedObject = [];
 
 UltimateLoader.multiload(objectUrls, function(objects)
 {
-
   for (var i = 0; i < objects.length; i++)
   {
   	objects[i].position.set(0,-450,0);
@@ -69,6 +78,5 @@ UltimateLoader.multiload(objectUrls, function(objects)
   	
   	loadedObjects[i] = objects[i];
   }
-  
 });
 ```
