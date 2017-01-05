@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.1.3
+ * version 0.1.4
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -46,13 +46,11 @@ var UltimateLoader = UltimateLoader || {};
 	* 
 	*	The object is returned via the callback.
     */
-	main.load = function(objUrl, callback)
+	main.load = function(url, callback)
 	{
-		var arr = [objUrl, callback];
-		
 		if (main.useQueue)
 		{
-			queue(arr);
+			queue(url, callback);
 
 			//checks if the newly queued object is next
 			//start the queue if it is
@@ -60,7 +58,7 @@ var UltimateLoader = UltimateLoader || {};
 		}
 		else
 		{
-			load(arr);
+			load(url, callback);
 		}
 	}
 	
