@@ -1,5 +1,5 @@
 # UltimateLoader
-A tool to load objects of various types for Three.js in AltspaceVR
+A tool to load objects of various types for Three.js
 
 ## Files types
 Currently accepted object file types:

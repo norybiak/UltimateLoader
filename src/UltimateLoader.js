@@ -1,9 +1,9 @@
 /**
  * ULTIMATE LOADER
- * A tool to help load objects in Three.js (for Altspace)
+ * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.2
+ * version 0.1.2
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -11,29 +11,34 @@ var UltimateLoader = UltimateLoader || {};
 (function(main) 
 { 'use strict';
 
-	//A list containing all of the objects loaded by file name (used for cloning)
-	var listOfObjectFilesLoaded = {};
-
+	// Queue related variables.
 	var queueList = [];
 	var next = 0;
 	var lastStop;
 	
 	var crossOrigin = 'anonymous';
-	var baseUrl = '';
-	
+
    /** 
-	* If true, the objects will load incrementally. Loading time is drastically increased.
+	* bool UltimateLoader.useQueue
+	* If true, the objects will load incrementally. Loading time is drastically increased. Default (recommendation) is false.
 	*
     */
-	main.queue = false;
+	main.useQueue = false;
 	
    /** 
-	* Default size is 32 (arbitrary number that works)
+    * int UltimateLoader.imageSize
+	* Default size is 32 (arbitrary number)
 	* Depending on enclosure size, this number will need to be changed.
 	* 
     */
-	
 	main.imageSize = 32;
+	
+   /** 
+	* bool UltimateLoader.loadImagesOnPlane
+	* Whethor or not images should load on a plane. Default is false.
+	* 
+    */
+	main.loadImagesOnPlane = false;
 
    /** 
 	*	UltimateLoader.load()
@@ -43,18 +48,18 @@ var UltimateLoader = UltimateLoader || {};
     */
 	main.load = function(objUrl, callback)
 	{
-		if (main.queue)
+		var arr = [objUrl, callback];
+		
+		if (main.useQueue)
 		{
-			queue(objUrl, callback);
-			
+			queue(arr);
+
 			//checks if the newly queued object is next
 			//start the queue if it is
 			start();
 		}
 		else
 		{
-			var arr = [objUrl, callback];
-			
 			load(arr);
 		}
 	}
@@ -65,7 +70,7 @@ var UltimateLoader = UltimateLoader || {};
 	*
 	* 	An array of objects is returned (in order of the objects passed in) via the callback.
     */
-	main.multiload = function(objUrls, callback)
+	main.multiload = function(urls, callback)
 	{
 		var objectsLoaded = [];
 		var totalLoaded = 0;
@@ -81,11 +86,13 @@ var UltimateLoader = UltimateLoader || {};
 			}
 		};
 		
-		for (var i = 0; i < objUrls.length; i++)
+		for (var i = 0; i < urls.length; i++)
 		{
-			if (main.queue)
+			var arr = [urls[i], callbackFunction, i];
+			
+			if (main.useQueue)
 			{
-				queue(objUrls[i], callbackFunction, i);
+				queue(urls[i], callbackFunction);
 				
 				//checks if the newly queued object is next
 				//start the queue if it is
@@ -93,15 +100,9 @@ var UltimateLoader = UltimateLoader || {};
 			}
 			else
 			{
-				var arr = [objUrls[i], callbackFunction, i];
-			
-				load(arr);
+				load(urls[i], callbackFunction, i);
 			}
 		}
-		
-		//checks if the newly queued object is next
-		//start the queue if it is
-		start();
 	}
 	
    /** 
@@ -109,9 +110,9 @@ var UltimateLoader = UltimateLoader || {};
 	*	Add object reference to the queue list.
 	*
     */
-	function queue(objUrl, callback)
+	function queue(url, callback)
 	{
-		queueList.push([objUrl, callback]);
+		queueList.push([url, callback]);
 	}
 
    /** 
@@ -154,19 +155,18 @@ var UltimateLoader = UltimateLoader || {};
 	*	If the object file already exists, clone in.
 	*
     */
-	function load(arr)
+	function load(url, callback, i)
 	{
-		var url = arr[0];
-		var callback = arr[1];
+		var i = i || null;
 		
-		var file = getFileInfo(url);
+		var file = parseFilenameFromURL(url);
 		file.url = url;
 		file.callback = callback;
 		
-		//Special case for multiload.
-		if (arr[2] != null)
+		//Special case for multiload. Note that we must strictly check if false because i can be 0.
+		if (i !== false)
 		{
-			file.i = arr[2];
+			file.i = i;
 		}
 	
 		switch (file.ext)
@@ -208,28 +208,25 @@ var UltimateLoader = UltimateLoader || {};
 				dequeue(); //Move to the next object
 				break;
 		}
-		
 	}
 	
    /** 
-	*	getFileInfo()
-	*	Sets the baseUrl and splits the filename into an object called info. 
-	*	Info contains the name, extention, and the baseUrl.
+	*	parseFilenameFromURL()
+	*	Parses the url into usable info. This will get the base url, filename, and extension.
+	*	
 	*
     */
-	function getFileInfo(path)
+	function parseFilenameFromURL(url)
 	{
-		var newPath = path.slice(0, path.lastIndexOf('/') + 1);
-		if (newPath !== "" || newPath !== null)
-		{
-			baseUrl = newPath;
-		}
+		var base = url.slice(0, url.lastIndexOf('/') + 1);
+	
+		var file = url.substr(url.lastIndexOf('/') + 1);
 		
-		var file = path.substr(path.lastIndexOf('/') + 1);
-		
-		var s = file.split('.');
+		var fileInfo = file.split('.');
+		var filename = fileInfo[0];
+		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
 
-		var info = {name: s[0], ext: s[s.length-1].toLowerCase(), baseUrl: newPath};
+		var info = {name: filename, ext: fileExt, baseUrl: base};
 		
 		return info;	
 	}
@@ -261,7 +258,6 @@ var UltimateLoader = UltimateLoader || {};
 
 			objLoader.load(obj, function (object)
 			{
-
 				object.traverse(function(child) 
 				{
                   if (child instanceof THREE.Mesh) 
@@ -310,7 +306,37 @@ var UltimateLoader = UltimateLoader || {};
 		}, onProgress, onError);
 	}
 	
+	
    /** 
+	*	loadImage()
+	*	.png or .jpeg file found, attempt to load it.
+	*	Adds texture to a plane. User may change the default plane transform via callback.
+	*
+    */
+	function loadImage(file)
+	{
+		var loader = new THREE.TextureLoader();
+		
+		loader.load(file.url, function(texture) 
+		{	
+			var object = texture;
+			if (main.loadImagesOnPlane)
+			{
+				var height = (texture.image.naturalHeight / texture.image.naturalWidth) * main.imageSize;
+				var geometry = new THREE.PlaneGeometry(main.imageSize, height, main.imageSize);
+				var material = new THREE.MeshBasicMaterial({map: texture, side: THREE.DoubleSide});
+				var plane = new THREE.Mesh( geometry, material );
+				
+				object = plane;
+				
+			}
+
+			file.object = object;
+			handleOnLoad(file);
+		}, onProgress, onError);
+	}
+	
+   /** EXPERIMENTAL
 	*	loadgltf()
 	*	.gltf file found, attempt to load it.
 	*	This one is iffy and doesn't have full proper implementaion. May not work properly.
@@ -330,27 +356,14 @@ var UltimateLoader = UltimateLoader || {};
 		
 	}
 	
-   /** 
-	*	loadImage()
-	*	.png or .jpeg file found, attempt to load it.
-	*	Adds texture to a plane. User may change the default plane transform via callback.
+   /** EXPERIMENTAL
+	*	loadFBX()
+	*	.fbx file found, attempt to load it.
+	*	This is experimental. The FBX loader is ASCII v7+ only. 
 	*
     */
-	function loadImage(file)
-	{
-		var loader = new THREE.TextureLoader();
-		
-		loader.load(file.url, function(texture) 
-		{
-			file.object = texture;
-			handleOnLoad(file);
-		}, onProgress, onError);
-	}
-	
-	
 	function loadFBX(file)
 	{
-	
 		var loader = new THREE.FBXLoader();
 		
 		loader.load(file.url, function(object) 
