@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.1.6
+ * version 0.1.7
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -86,11 +86,9 @@ var UltimateLoader = UltimateLoader || {};
 		
 		for (var i = 0; i < urls.length; i++)
 		{
-			var arr = [urls[i], callbackFunction, i];
-			
 			if (main.useQueue)
 			{
-				queue(urls[i], callbackFunction);
+				queue(urls[i], callbackFunction, i);
 				
 				//checks if the newly queued object is next
 				//start the queue if it is
@@ -108,9 +106,9 @@ var UltimateLoader = UltimateLoader || {};
 	*	Add object reference to the queue list.
 	*
     */
-	function queue(url, callback)
+	function queue(url, callback, i)
 	{
-		queueList.push([url, callback]);
+		queueList.push([url, callback, i]);
 	}
 
    /** 
@@ -131,7 +129,7 @@ var UltimateLoader = UltimateLoader || {};
 		var object = queueList[next];
 		next++;
 		
-		load(object);
+		load(object[0], object[1], object[2]);
 	}
 	
    /** 
@@ -151,22 +149,21 @@ var UltimateLoader = UltimateLoader || {};
 	*	load()
 	*	Check the object file extension and use the correct loader.
 	*	If the object file already exists, clone in.
+	*   param - i - may be null. It's a special case for multiload.
 	*
     */
 	function load(url, callback, i)
 	{
-		var i = i || null;
-		
 		var file = parseFilenameFromURL(url);
 		file.url = url;
 		file.callback = callback;
 		
-		//Special case for multiload. Note that we must strictly check if false because i can be 0.
-		if (i !== false)
+		//Special case for multiload.
+		if (i != null)
 		{
 			file.i = i;
 		}
-	
+		
 		switch (file.ext)
 		{
 			case "obj":
@@ -398,7 +395,7 @@ var UltimateLoader = UltimateLoader || {};
 			file.callback(file.object);
 		}
 		
-		if (main.queue)
+		if (main.useQueue)
 		{
 			dequeue();
 		}	
