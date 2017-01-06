@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.1.5
+ * version 0.1.6
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -78,7 +78,7 @@ var UltimateLoader = UltimateLoader || {};
 			objectsLoaded[file.i] = file.object;
 			totalLoaded++;
 			
-			if (totalLoaded == objUrls.length)
+			if (totalLoaded == urls.length)
 			{
 				callback(objectsLoaded);
 			}
