@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.1.4
+ * version 0.1.5
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -389,8 +389,6 @@ var UltimateLoader = UltimateLoader || {};
     */
 	function handleOnLoad(file)
 	{
-		listOfObjectFilesLoaded[file.name] = file.object;
-
 		if (file.i != null)
 		{
 			file.callback(file);
