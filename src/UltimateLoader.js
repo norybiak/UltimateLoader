@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.1.7
+ * version 0.2.0
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -186,6 +186,10 @@ var UltimateLoader = UltimateLoader || {};
 				loadFBX(file);
 				break;
 				
+			case "drc":
+				loadDRACO(file);
+				break;
+				
 			case "png":
 				loadImage(file);
 				break;
@@ -253,14 +257,6 @@ var UltimateLoader = UltimateLoader || {};
 
 			objLoader.load(obj, function (object)
 			{
-				object.traverse(function(child) 
-				{
-                  if (child instanceof THREE.Mesh) 
-				  {
-                      child.material.side = THREE.DoubleSide;
-                  }
-				});
-
 				file.object = object;
 				handleOnLoad(file);
 			}, onProgress, onError);
@@ -367,6 +363,34 @@ var UltimateLoader = UltimateLoader || {};
 			handleOnLoad(file);
 		}, onProgress, onError() );
 		
+	}
+	
+   /** EXPERIMENTAL
+	*	loadDRACO()
+	*	.fbx file found, attempt to load it.
+	*	This is experimental. The FBX loader is ASCII v7+ only. 
+	*
+    */
+	function loadDRACO(file)
+	{
+		var loader = new THREE.DRACOLoader();
+		
+		loader.load(file.url, function(object) 
+		{
+			var bufferGeometry = dracoLoader.decodeDracoFile(object);
+			
+			// Point cloud does not have face indices.
+			if (bufferGeometry.index == null) {
+			  geometry = new THREE.Points(bufferGeometry, material);
+			} else {
+			  bufferGeometry.computeVertexNormals();
+			  geometry = new THREE.Mesh(bufferGeometry, material);
+			}
+			
+			
+			file.object = geometry;
+			handleOnLoad(file);
+		}, onProgress, onError() );
 	}
 	
 	function onProgress(xhr) 

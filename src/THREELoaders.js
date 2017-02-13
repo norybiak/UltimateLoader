@@ -13262,5 +13262,3 @@ THREE.TGALoader.prototype.parse = function ( buffer ) {
 	};
 
 } )();
-
-
