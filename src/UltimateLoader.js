@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.2.0
+ * version 0.3.0
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -182,6 +182,10 @@ var UltimateLoader = UltimateLoader || {};
 				loadglTF(file);
 				break;
 				
+			case "glb":
+				loadglTF(file);
+				break;
+				
 			case "fbx":
 				loadFBX(file);
 				break;
@@ -329,13 +333,13 @@ var UltimateLoader = UltimateLoader || {};
 	
    /** EXPERIMENTAL
 	*	loadgltf()
-	*	.gltf file found, attempt to load it.
+	*	.gltf or .glb file found, attempt to load it.
 	*	This one is iffy and doesn't have full proper implementaion. May not work properly.
 	*
     */
 	function loadglTF(file)
 	{
-		var loader = new THREE.glTFLoader();
+		var loader = new THREE.GLTFLoader();
 		
 		loader.load(file.url, function(gltf) 
 		{
@@ -346,53 +350,7 @@ var UltimateLoader = UltimateLoader || {};
 		}, onProgress, onError);
 		
 	}
-	
-   /** EXPERIMENTAL
-	*	loadFBX()
-	*	.fbx file found, attempt to load it.
-	*	This is experimental. The FBX loader is ASCII v7+ only. 
-	*
-    */
-	function loadFBX(file)
-	{
-		var loader = new THREE.FBXLoader();
-		
-		loader.load(file.url, function(object) 
-		{
-			file.object = object;
-			handleOnLoad(file);
-		}, onProgress, onError() );
-		
-	}
-	
-   /** EXPERIMENTAL
-	*	loadDRACO()
-	*	.fbx file found, attempt to load it.
-	*	This is experimental. The FBX loader is ASCII v7+ only. 
-	*
-    */
-	function loadDRACO(file)
-	{
-		var loader = new THREE.DRACOLoader();
-		
-		loader.load(file.url, function(object) 
-		{
-			var bufferGeometry = dracoLoader.decodeDracoFile(object);
-			
-			// Point cloud does not have face indices.
-			if (bufferGeometry.index == null) {
-			  geometry = new THREE.Points(bufferGeometry, material);
-			} else {
-			  bufferGeometry.computeVertexNormals();
-			  geometry = new THREE.Mesh(bufferGeometry, material);
-			}
-			
-			
-			file.object = geometry;
-			handleOnLoad(file);
-		}, onProgress, onError() );
-	}
-	
+
 	function onProgress(xhr) 
 	{
 
@@ -428,3 +386,5 @@ var UltimateLoader = UltimateLoader || {};
 	}
 	
 })(UltimateLoader);
+
+THREE.FileLoader = THREE.FileLoader || THREE.XHRLoader;
