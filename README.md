@@ -65,7 +65,7 @@ var objectUrls =
 	...
 ];
 
-var loadedObject = [];
+var loadedObjects = [];
 
 UltimateLoader.multiload(objectUrls, function(objects)
 {
