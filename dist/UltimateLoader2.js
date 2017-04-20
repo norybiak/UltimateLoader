@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.3.1
+ * version 1.0.0
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -11,20 +11,13 @@ var UltimateLoader = UltimateLoader || {};
 (function(main) 
 { 'use strict';
 
-	// Queue related variables.
-	var queueList = [];
-	var next = 0;
-	var lastStop;
+	var sharedMtl = false;
+	var scene = false;
 	
 	var crossOrigin = 'anonymous';
-
-   /** 
-	* bool UltimateLoader.useQueue
-	* If true, the objects will load incrementally. Loading time is drastically increased. Default (recommendation) is false.
-	*
-    */
-	main.useQueue = false;
 	
+	var TRANSFORM_TYPES = ['position', 'rotation', 'scale'];
+
    /** 
     * int UltimateLoader.imageSize
 	* Default size is 32 (arbitrary number)
@@ -39,109 +32,158 @@ var UltimateLoader = UltimateLoader || {};
 	* 
     */
 	main.loadImagesOnPlane = false;
-
-   /** 
-	*	UltimateLoader.load()
-	*	Load an object and then run the callback function.
-	* 
-	*	The object is returned via the callback.
-    */
-	main.load = function(url, callback)
+	
+	main.load = function()
 	{
-		if (main.useQueue)
+		var strings = [];
+		var objects = [];
+		
+		for (var i = 0; i  < arguments.length; i++)
 		{
-			queue(url, callback);
+			if (typeof arguments[i] === 'string')
+			{
+				strings.push(arguments[i]);
+			}
+			else if (typeof arguments[i] === 'object')
+			{
+				for (var p in arguments[i])
+				{
+					objects.push(arguments[i]);
+				}
+			}
+		}
+		
+		parseStrings(strings); //Lets check our string arguments
+		var objectToProcess = parseObjects(objects); //lets check our object arguments. Note that this returns that last object that isn't an array or scene.
 
-			//checks if the newly queued object is next
-			//start the queue if it is
-			start();
-		}
-		else
-		{
-			load(url, callback);
-		}
+		return new Promise(function(resolve, reject) 
+		{		
+			var loader = new Loader();
+			loader.load(objectToProcess, function()
+			{
+				if (loader.complete) 
+				{
+					resolve();
+				}
+				else 
+				{
+					reject(Error("It broke"));
+				}
+			});
+		});
 	}
 	
-   /** 
-	*	UltimateLoader.multiload()
-	*	Load an array of objects and run the callback function.
-	*
-	* 	An array of objects is returned (in order of the objects passed in) via the callback.
-    */
-	main.multiload = function(urls, callback)
+	function parseStrings(strings)
 	{
-		var objectsLoaded = [];
-		var totalLoaded = 0;
+		if (strings.length <= 0) { return; };
 		
-		var callbackFunction = function(file)
+		var parsed = [];
+		
+		var string = "";
+		for (var i = 0; i < strings.length; i++)
 		{
-			objectsLoaded[file.i] = file.object;
-			totalLoaded++;
+			string = strings[i];
 			
-			if (totalLoaded == urls.length)
+			//Check to see if the string is a valid url and get the info
+			var info = parseURL(string);
+
+			if (info)
 			{
-				callback(objectsLoaded);
+				//If a path to an mtl is passed as a function argument, use it as a shared mtl.
+				if (info.ext === 'mtl')
+				{
+					sharedMtl = info;
+				}
 			}
-		};
+		}
 		
-		for (var i = 0; i < urls.length; i++)
+		return parsed;
+	}
+	
+	function parseObjects(objects)
+	{
+		var objectToProcess;
+		
+		var object = {};
+		for (var i = 0; i < objects.length; i++)
 		{
-			if (main.useQueue)
+			object = objects[i];
+			if (Array.isArray(object))
+			{		
+				continue;			
+			}
+			else if (object instanceof THREE.Scene)
 			{
-				queue(urls[i], callbackFunction, i);
-				
-				//checks if the newly queued object is next
-				//start the queue if it is
-				start();
+				scene = object;
 			}
 			else
 			{
-				load(urls[i], callbackFunction, i);
+				objectToProcess = object;	
 			}
 		}
-	}
-	
-   /** 
-	*	queue()
-	*	Add object reference to the queue list.
-	*
-    */
-	function queue(url, callback, i)
-	{
-		queueList.push([url, callback, i]);
+		
+		return objectToProcess;
 	}
 
-   /** 
-	*	dequeue()
-	*	Load the next object in the queue.
-	*
-    */
-	function dequeue()
+	function Loader()
 	{
-		//Nothing to get! Empty queueList
-		if (next > queueList.length-1) 
-		{ 
-			queueList = [];
-			next = 0;
-			return;
-		}
-	
-		var object = queueList[next];
-		next++;
+		this.count = 0;
+		this.complete = false;
+		this.size = 0;
+	}
+
+	Loader.prototype.load = function(object, callback)
+	{
+		this.size = Object.size(object);
 		
-		load(object[0], object[1], object[2]);
+		for (var name in object) 
+		{
+			var model = object[name];
+			var url = model.url;
+			
+			var file = parseURL(url);	
+			if (!file) { console.error('UltimateLoader: ' + name + ' failed to load as it must pass a valid url'); continue; }
+			
+			file.model = model;
+			file.callback = callbackFunction.bind(this, model, object, callback);
+			
+			load(file);
+		}	
 	}
 	
-   /** 
-	*	start()
-	*	Helper function to determine if we need to dequeue.
-	*
-    */
-	function start()
+	function callbackFunction(model, object, callback, object3d)
 	{
-		if (next == 0)
+		updateTransforms(model, object3d);
+		scene.add(object3d);
+		
+		this.count++;
+		if (this.count == this.size)
 		{
-			dequeue();
+			for (var name in object) 
+			{
+				object[name] = object3d;
+			}
+			
+			this.complete = true;		
+			callback();
+		}
+	}
+	
+	function updateTransforms(object, loadedModel)
+	{
+		for (var transformType in object)
+		{
+			for (var i = 0; i < TRANSFORM_TYPES.length; i++)
+			{			
+				if (TRANSFORM_TYPES[i] == transformType)
+				{
+					var params = object[transformType].split(' ');
+					
+					console.log(params);
+		
+					loadedModel[transformType].set(parseFloat(params[0]), parseFloat(params[1]), parseFloat(params[2]));
+				}
+			}	
 		}
 	}
 	
@@ -152,18 +194,8 @@ var UltimateLoader = UltimateLoader || {};
 	*   param - i - may be null. It's a special case for multiload.
 	*
     */
-	function load(url, callback, i)
-	{
-		var file = parseFilenameFromURL(url);
-		file.url = url;
-		file.callback = callback;
-		
-		//Special case for multiload.
-		if (i != null)
-		{
-			file.i = i;
-		}
-		
+	function load(file)
+	{	
 		switch (file.ext)
 		{
 			case "obj":
@@ -219,17 +251,19 @@ var UltimateLoader = UltimateLoader || {};
 	*	
 	*
     */
-	function parseFilenameFromURL(url)
+	function parseURL(url)
 	{
 		var base = url.slice(0, url.lastIndexOf('/') + 1);
-	
+		
+		if (base === '' || base === null || base === 'undefined') { return false; } //not a valid path
+
 		var file = url.substr(url.lastIndexOf('/') + 1);
 		
 		var fileInfo = file.split('.');
 		var filename = fileInfo[0];
 		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
 
-		var info = {name: filename, ext: fileExt, baseUrl: base};
+		var info = {name: filename, ext: fileExt, baseUrl: base, url: url};
 		
 		return info;	
 	}
@@ -243,13 +277,30 @@ var UltimateLoader = UltimateLoader || {};
 	{
 		var obj = file.name + '.obj';
 		var mtl = file.name + '.mtl';
+		var mtlBase = file.baseUrl;
+		
+		//Special case where mtl is provided in specific model
+		if (file.model.mtl)
+		{
+			var mtlFile = parseURL(file.model.mtl)
+			if (mtlFile) 
+			{ 
+				mtl = mtlFile.name + '.mtl';
+				mtlBase = mtlFile.baseUrl;
+			}
+		} 
+		else if (sharedMtl) //Sspecial case where mtl is provided for ALL .obj files
+		{
+			mtl = sharedMtl.name + '.mtl';
+			mtlBase = sharedMtl.baseUrl;
+		}
 		
 		var mtlLoader = new THREE.MTLLoader();
 		
-		mtlLoader.setPath(file.baseUrl);
-		mtlLoader.setTexturePath ? mtlLoader.setTexturePath(file.baseUrl) : mtlLoader.setBaseUrl(file.baseUrl);
+		mtlLoader.setPath(mtlBase);
+		mtlLoader.setTexturePath ? mtlLoader.setTexturePath(mtlBase) : mtlLoader.setBaseUrl(mtlBase);
 		mtlLoader.setCrossOrigin(crossOrigin);
-		
+			
 		mtlLoader.load(mtl, function(materials) 
 		{
 			materials.preload();
@@ -348,7 +399,6 @@ var UltimateLoader = UltimateLoader || {};
 			file.object = object;
 			handleOnLoad(file);
 		}, onProgress, onError);
-		
 	}
 
 	function onProgress(xhr) 
@@ -368,23 +418,20 @@ var UltimateLoader = UltimateLoader || {};
     */
 	function handleOnLoad(file)
 	{
-		if (file.i != null)
-		{
-			file.callback(file);
-		}
-		else
-		{
-			file.callback(file.object);
-		}
-		
-		if (main.useQueue)
-		{
-			dequeue();
-		}	
-		
 		console.log("UltimateLoader: Object " + file.name + " loaded!");
+		
+		file.callback(file.object);
 	}
 	
+	Object.size = function(obj) 
+	{
+		var size = 0, key;
+		for (key in obj) 
+		{
+			if (obj.hasOwnProperty(key)) size++;
+		}
+		return size;
+	};
 })(UltimateLoader);
 
 THREE.FileLoader = THREE.FileLoader || THREE.XHRLoader;
