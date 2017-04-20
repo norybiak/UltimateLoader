@@ -77,7 +77,7 @@ var Models =
 	Celeste: { url: 'models/Celeste.obj', mtl: 'models/Other.mtl', position: '0 0 5', scale: '1 1 1', rotation: '0 0 0' }
 };
 
-UltimateLoader.load(scene, Models, '/models/Other.mtl').then(function()
+UltimateLoader.load(scene, Models).then(function()
 {
 	Models.Duck.position.set(0,0,0);
 	scene.remove(Models.Celeste);
