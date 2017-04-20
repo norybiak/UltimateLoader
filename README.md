@@ -83,10 +83,6 @@ UltimateLoader.multiload(objectUrls, function(objects)
 
 ## Using UltimateLoader2
 
-There are two methods you can use to load objects. 
-* UltimateLoader.load(path, callback);
-
-
 ### UltimateLoader.load()
 ```javascript
 var Models =
