@@ -80,3 +80,25 @@ UltimateLoader.multiload(objectUrls, function(objects)
   }
 });
 ```
+
+## Using UltimateLoader2
+
+There are two methods you can use to load objects. 
+* UltimateLoader.load(path, callback);
+
+
+### UltimateLoader.load()
+```javascript
+var Models =
+{
+	Duck: { url: 'models/Duck.glb' },
+	Chair: { url: 'models/chair.dae', position: '0 5 0', scale: '1 1 1', rotation: '0 0 0' },
+	Celeste: { url: 'models/Celeste.obj', mtl: 'models/Other.mtl', position: '0 0 5', scale: '1 1 1', rotation: '0 0 0' }
+};
+
+UltimateLoader.load(scene, Models).then(function()
+{
+	console.log(Models);
+});
+
+```
