@@ -179,8 +179,6 @@ var UltimateLoader = UltimateLoader || {};
 				{
 					var params = object[transformType].split(' ');
 					
-					console.log(params);
-		
 					loadedModel[transformType].set(parseFloat(params[0]), parseFloat(params[1]), parseFloat(params[2]));
 				}
 			}	
