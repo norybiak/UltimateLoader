@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.4.0
+ * version 0.4.3
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -7898,8 +7898,8 @@ THREE.GLTFLoader = ( function () {
 
 		}
 
-		// Relative URL
-		return ( path || '' ) + url;
+		var absoluteUrl = new URL(( path || '' ) + url, location.href.substring(0, location.href.lastIndexOf('/') + 1));
+		return absoluteUrl.toString();
 
 	}
 
@@ -8329,9 +8329,9 @@ THREE.GLTFLoader = ( function () {
 						}
 
 						if ( altspace && altspace.inClient ) {
-
+							
 							// Defer Texture Image Loading To Native Altspace Client
-							texture = new THREE.Texture( { src: sourceUri } );
+							texture = new THREE.Texture( { src: resolveURL( sourceUri, options.path ) } );
 							
 							handleTexture(texture);
 
