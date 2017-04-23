@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.0.1
+ * version 1.0.2
  */
 
 var UltimateLoader = UltimateLoader || {};
