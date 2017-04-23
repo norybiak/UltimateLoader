@@ -138,32 +138,28 @@ var UltimateLoader = UltimateLoader || {};
 		
 		for (var name in object) 
 		{
-			var model = object[name];
-			var url = model.url;
+			var url = object[name].url;
 			
 			var file = parseURL(url);	
 			if (!file) { console.error('UltimateLoader: ' + name + ' failed to load as it must pass a valid url'); continue; }
 			
-			file.model = model;
-			file.callback = callbackFunction.bind(this, model, object, callback);
+			file.model = object[name];
+			file.callback = callbackFunction.bind(this, name, object, callback);
 			
 			load(file);
 		}	
 	}
 	
-	function callbackFunction(model, object, callback, object3d)
+	function callbackFunction(name, object, callback, object3d)
 	{
-		updateTransforms(model, object3d);
+		updateTransforms(object[name], object3d);
 		scene.add(object3d);
+		
+		object[name] = object3d;
 		
 		this.count++;
 		if (this.count == this.size)
 		{
-			for (var name in object) 
-			{
-				object[name] = object3d;
-			}
-			
 			this.complete = true;		
 			callback();
 		}
@@ -952,19 +948,29 @@ THREE.MTLLoader.MaterialCreator.prototype = {
 	},
 
 	loadTexture: function ( url, mapping, onLoad, onProgress, onError ) {
-
+		
 		var texture;
-		var loader = THREE.Loader.Handlers.get( url );
-		var manager = ( this.manager !== undefined ) ? this.manager : THREE.DefaultLoadingManager;
+		
+		if ( altspace && altspace.inClient ) {
 
-		if ( loader === null ) {
+			// Defer Texture Image Loading To Native Altspace Client
+			texture = new THREE.Texture( { src: url } );
+			
+		} else {
+			
+			var loader = THREE.Loader.Handlers.get( url );
+			var manager = ( this.manager !== undefined ) ? this.manager : THREE.DefaultLoadingManager;
 
-			loader = new THREE.TextureLoader( manager );
+			if ( loader === null ) {
 
+				loader = new THREE.TextureLoader( manager );
+
+			}
+
+			if ( loader.setCrossOrigin ) loader.setCrossOrigin( this.crossOrigin );
+			texture = loader.load( url, onLoad, onProgress, onError );
+		
 		}
-
-		if ( loader.setCrossOrigin ) loader.setCrossOrigin( this.crossOrigin );
-		texture = loader.load( url, onLoad, onProgress, onError );
 
 		if ( mapping !== undefined ) texture.mapping = mapping;
 
@@ -5432,18 +5438,28 @@ THREE.ColladaLoader = function () {
 										var url = baseUrl + image.init_from;
 
 										var texture;
-										var loader = THREE.Loader.Handlers.get( url );
+										
+										if ( altspace && altspace.inClient ) {
 
-										if ( loader !== null ) {
-
-											texture = loader.load( url );
-
+											// Defer Texture Image Loading To Native Altspace Client
+											texture = new THREE.Texture( { src: url } );
+											
 										} else {
+											
+											var loader = THREE.Loader.Handlers.get( url );
 
-											texture = new THREE.Texture();
+											if ( loader !== null ) {
 
-											loadTextureImage( texture, url );
+												texture = loader.load( url );
 
+											} else {
+
+												texture = new THREE.Texture();
+
+												loadTextureImage( texture, url );
+
+											}
+											
 										}
 
 										if ( sampler.wrap_s === "MIRROR" ) {
@@ -8353,53 +8369,70 @@ THREE.GLTFLoader = ( function () {
 
 						}
 
-						var textureLoader = THREE.Loader.Handlers.get( sourceUri );
+						if ( altspace && altspace.inClient ) {
 
-						if ( textureLoader === null ) {
+							// Defer Texture Image Loading To Native Altspace Client
+							texture = new THREE.Texture( { src: sourceUri } );
+							
+							handleTexture(texture);
 
-							textureLoader = new THREE.TextureLoader();
+							resolve( texture );
+							
+						} else {
+							
+							var textureLoader = THREE.Loader.Handlers.get( sourceUri );
+
+							if ( textureLoader === null ) {
+
+								textureLoader = new THREE.TextureLoader();
+
+							}
+
+							textureLoader.setCrossOrigin( options.crossOrigin );
+
+							textureLoader.load( resolveURL( sourceUri, options.path ), function ( _texture ) {
+
+								handleTexture(_texture);
+
+								resolve( _texture );
+
+							}, undefined, function () {
+
+								resolve();
+
+							} );
+							
+						}
+						
+					} );
+					
+					function handleTexture(_texture)
+					{
+						_texture.flipY = false;
+
+						if ( texture.name !== undefined ) _texture.name = texture.name;
+
+						_texture.format = texture.format !== undefined ? WEBGL_TEXTURE_FORMATS[ texture.format ] : THREE.RGBAFormat;
+
+						if ( texture.internalFormat !== undefined && _texture.format !== WEBGL_TEXTURE_FORMATS[ texture.internalFormat ] ) {
+
+							console.warn( 'THREE.GLTFLoader: Three.js doesn\'t support texture internalFormat which is different from texture format. ' +
+														'internalFormat will be forced to be the same value as format.' );
 
 						}
 
-						textureLoader.setCrossOrigin( options.crossOrigin );
+						_texture.type = texture.type !== undefined ? WEBGL_TEXTURE_DATATYPES[ texture.type ] : THREE.UnsignedByteType;
 
-						textureLoader.load( resolveURL( sourceUri, options.path ), function ( _texture ) {
+						if ( texture.sampler ) {
 
-							_texture.flipY = false;
+							var sampler = json.samplers[ texture.sampler ];
 
-							if ( texture.name !== undefined ) _texture.name = texture.name;
-
-							_texture.format = texture.format !== undefined ? WEBGL_TEXTURE_FORMATS[ texture.format ] : THREE.RGBAFormat;
-
-							if ( texture.internalFormat !== undefined && _texture.format !== WEBGL_TEXTURE_FORMATS[ texture.internalFormat ] ) {
-
-								console.warn( 'THREE.GLTFLoader: Three.js doesn\'t support texture internalFormat which is different from texture format. ' +
-															'internalFormat will be forced to be the same value as format.' );
-
-							}
-
-							_texture.type = texture.type !== undefined ? WEBGL_TEXTURE_DATATYPES[ texture.type ] : THREE.UnsignedByteType;
-
-							if ( texture.sampler ) {
-
-								var sampler = json.samplers[ texture.sampler ];
-
-								_texture.magFilter = WEBGL_FILTERS[ sampler.magFilter ] || THREE.LinearFilter;
-								_texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ] || THREE.NearestMipMapLinearFilter;
-								_texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || THREE.RepeatWrapping;
-								_texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || THREE.RepeatWrapping;
-
-							}
-
-							resolve( _texture );
-
-						}, undefined, function () {
-
-							resolve();
-
-						} );
-
-					} );
+							_texture.magFilter = WEBGL_FILTERS[ sampler.magFilter ] || THREE.LinearFilter;
+							_texture.minFilter = WEBGL_FILTERS[ sampler.minFilter ] || THREE.NearestMipMapLinearFilter;
+							_texture.wrapS = WEBGL_WRAPPINGS[ sampler.wrapS ] || THREE.RepeatWrapping;
+							_texture.wrapT = WEBGL_WRAPPINGS[ sampler.wrapT ] || THREE.RepeatWrapping;
+						}
+					}
 
 				}
 

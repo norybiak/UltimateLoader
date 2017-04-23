@@ -138,32 +138,28 @@ var UltimateLoader = UltimateLoader || {};
 		
 		for (var name in object) 
 		{
-			var model = object[name];
-			var url = model.url;
+			var url = object[name].url;
 			
 			var file = parseURL(url);	
 			if (!file) { console.error('UltimateLoader: ' + name + ' failed to load as it must pass a valid url'); continue; }
 			
-			file.model = model;
-			file.callback = callbackFunction.bind(this, model, object, callback);
+			file.model = object[name];
+			file.callback = callbackFunction.bind(this, name, object, callback);
 			
 			load(file);
 		}	
 	}
 	
-	function callbackFunction(model, object, callback, object3d)
+	function callbackFunction(name, object, callback, object3d)
 	{
-		updateTransforms(model, object3d);
+		updateTransforms(object[name], object3d);
 		scene.add(object3d);
+		
+		object[name] = object3d;
 		
 		this.count++;
 		if (this.count == this.size)
 		{
-			for (var name in object) 
-			{
-				object[name] = object3d;
-			}
-			
 			this.complete = true;		
 			callback();
 		}
