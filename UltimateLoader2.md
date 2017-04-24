@@ -2,7 +2,7 @@
 
 This release introduces an experimental version of UltimateLoader that increases usability and performance.
 
-UltimateLoader2 (v1,0.0) aims to clean up your code by using a config. By creating a config object, you can easily define your models and insert basic transform information (position, scale, and rotation) all in one place. UtlimateLoader2 will load the models, automatically apply the transform data, and add the models to the scene for you. These actions are optional, you still have control over the models once they’re loaded. 
+UltimateLoader2 aims to clean up your code by using a config. By creating a config object, you can easily define your models and insert basic transform information (position, scale, and rotation) all in one place. UtlimateLoader2 will load the models, automatically apply the transform data, and add the models to the scene for you. These actions are optional, you still have control over the models once they’re loaded. 
 
 #### Key Changes:
 - Caching
