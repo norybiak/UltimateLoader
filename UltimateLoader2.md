@@ -67,11 +67,12 @@ var Models =
 
 UltimateLoader.load(Models).then(function(models)
 {
-	Models.Duck.position.set(0, 10, 0);
 });
 ```
 
 ### As an array
+Great for quick loading where you want the most control after the loading is done. You'll have to handle storing the models and automatic transformation is not available.
+
 ```javascript
 var array = 
 [
@@ -86,15 +87,18 @@ UltimateLoader.load(array).then(function(models)
 ```
 
 ### As a string
+The simplest load of a single model. You'll have to handle storing the model and automatic transformation is not available.
+
 ```javascript
 var src = 'models/avatar_head.obj';
-UltimateLoader.load(src).then(function(models)
+UltimateLoader.load(src).then(function(model)
 {
 });
 ```
 
 ### Combo
-You can mix the config types in one call
+You can mix the config types in one call for whatever reason.
+
 ```javascript
 UltimateLoader.load(src, array, Models).then(function(models)
 {
@@ -105,6 +109,7 @@ UltimateLoader.load(src, array, Models).then(function(models)
 
 #### inline mtl
 UltimateLoader allows you to pass a url to an .mtl file that will then be used across all .obj files. 
+
 ```javascript
 UltimateLoader.load('http://example.com/mat.mtl', src, array, Models).then(function(models)
 {
@@ -112,6 +117,7 @@ UltimateLoader.load('http://example.com/mat.mtl', src, array, Models).then(funct
 ```
 #### scene
 Pass in your scene so that UltimateLoader can automatically add your models to the scene.
+
 ```javascript
 UltimateLoader.load(scene, Models).then(function(models)
 {
@@ -141,6 +147,7 @@ A loader is only useful when you can access your models!
 
 ### Config object
 As implied in previous examples, you can access your loaded model by referencing the config object after the entire load is complete.
+
 ```javascript
 var Models =
 {
