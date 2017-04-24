@@ -107,15 +107,15 @@ UltimateLoader.load(src, array, Models).then(function(models)
 
 ### Special parameters
 
-#### inline mtl
-UltimateLoader allows you to pass a url to an .mtl file that will then be used across all .obj files. 
+#### Shared mtl
+This is an easy way to ensure that all .obj files share a single .mtl. If an mtl property is present in a config object, that will be used instead.
 
 ```javascript
 UltimateLoader.load('http://example.com/mat.mtl', src, array, Models).then(function(models)
 {
 });
 ```
-#### scene
+#### Scene
 Pass in your scene so that UltimateLoader can automatically add your models to the scene.
 
 ```javascript
@@ -123,8 +123,6 @@ UltimateLoader.load(scene, Models).then(function(models)
 {
 });
 ```
-
-This is an easy way to ensure that all .obj files share a single .mtl. If an mtl property is present in a config object, that will be used instead.
 
 ## Creating and using a config object for load()
 
