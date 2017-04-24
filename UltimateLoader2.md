@@ -23,7 +23,7 @@ var Models =
 	Celeste: { url: 'models/Celeste.obj', mtl: 'models/Other.mtl', position: '0 0 5', scale: '1 1 1', rotation: '0 0 0' }
 };
 
-UltimateLoader.load(scene, Models).then(function()
+UltimateLoader.load(scene, Models).then(function(models)
 {
 	console.log(Models);
 });
