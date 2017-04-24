@@ -70,6 +70,8 @@ var UltimateLoader = UltimateLoader || {};
     */
 	main.multiload = function(urls, callback)
 	{
+		console.time('Time');
+		
 		var objectsLoaded = [];
 		var totalLoaded = 0;
 		
@@ -81,6 +83,8 @@ var UltimateLoader = UltimateLoader || {};
 			if (totalLoaded == urls.length)
 			{
 				callback(objectsLoaded);
+				
+				console.timeEnd('Time');
 			}
 		};
 		

@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.0.3
+ * version 1.1.0
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -12,11 +12,38 @@ var UltimateLoader = UltimateLoader || {};
 { 'use strict';
 
 	var sharedMtl = false;
+	
 	var scene = false;
 	
 	var crossOrigin = 'anonymous';
 	
 	var TRANSFORM_TYPES = ['position', 'rotation', 'scale'];
+	
+	var cached = {};
+	
+   /** 
+    * bool UltimateLoader.autoload
+	* Default is true
+	* Auto load all objects
+	* 
+    */
+	main.autoLoad = true;
+		
+   /** 
+    * bool UltimateLoader.autoTransform
+	* Default is true
+	* Auto transform all objects
+	* 
+    */
+	main.autoTransform = true;
+	
+	/** 
+    * bool UltimateLoader.cache
+	* Default is true
+	* Whether UltimateLoader should cache objects
+	* 
+    */
+	main.cache = true;
 
    /** 
     * int UltimateLoader.imageSize
@@ -35,133 +62,300 @@ var UltimateLoader = UltimateLoader || {};
 	
 	main.load = function()
 	{
-		var strings = [];
-		var objects = [];
+		console.time('Total');
 		
-		for (var i = 0; i  < arguments.length; i++)
+		var toProcess = [];
+		
+		for (var i = 0; i < arguments.length; i++)
 		{
-			if (typeof arguments[i] === 'string')
+			var arg = arguments[i];
+			
+			if (typeof arg === 'string')
 			{
-				strings.push(arguments[i]);
-			}
-			else if (typeof arguments[i] === 'object')
-			{
-				for (var p in arguments[i])
+				var parsed = parseString(arg);
+				
+				if (parsed)
 				{
-					objects.push(arguments[i]);
+					toProcess.push(parsed);
+				}
+			}
+			else if (typeof arg === 'object')
+			{
+				if (Array.isArray(arg))
+				{
+					var parsed = [];
+					
+					for (var k = 0; k < arg.length; k++)
+					{
+						var parsed = parseString(arg[k]);				
+				
+						if (parsed)
+						{
+							toProcess.push(parsed);
+						}
+					}	
+				}
+				else if (arg instanceof THREE.Scene)
+				{
+					scene = arg;
+				}
+				else
+				{
+					var parsed = parseObject(arg);
+					
+					if (parsed.length === 0)
+					{
+						
+					}
+					
+					for (var k = 0; k < parsed.length; k++)
+					{
+						if (parsed[k])
+						{
+							toProcess.push(parsed[k]);
+						}
+					}
 				}
 			}
 		}
 		
-		parseStrings(strings); //Lets check our string arguments
-		var objectToProcess = parseObjects(objects); //lets check our object arguments. Note that this returns that last object that isn't an array or scene.
-
 		return new Promise(function(resolve, reject) 
 		{		
 			var loader = new Loader();
-			loader.load(objectToProcess, function()
+			loader.load(toProcess, function(objects)
 			{
 				if (loader.complete) 
 				{
-					resolve();
+					resolve(objects);
 				}
 				else 
 				{
-					reject(Error("It broke"));
+					reject();
 				}
 			});
 		});
 	}
 	
-	function parseStrings(strings)
-	{
-		if (strings.length <= 0) { return; };
+	function parseString(string)
+	{	
+		var url = resolveURL(string);
+		if (!url) { return; }
 		
-		var parsed = [];
+		var model = {};
 		
-		var string = "";
-		for (var i = 0; i < strings.length; i++)
+		model.urlInfo = parseURL(url);
+		model.shouldUpdate = false;
+		
+		if (model.urlInfo.ext === 'mtl')
 		{
-			string = strings[i];
-			
-			//Check to see if the string is a valid url and get the info
-			var info = parseURL(string);
-
-			if (info)
-			{
-				//If a path to an mtl is passed as a function argument, use it as a shared mtl.
-				if (info.ext === 'mtl')
-				{
-					sharedMtl = info;
-				}
-			}
+			sharedMtl = model.urlInfo;
+			return;
 		}
 		
-		return parsed;
+		return model;
 	}
 	
-	function parseObjects(objects)
+	function parseObject(object)
 	{
-		var objectToProcess;
+		var parsed = [];
 		
-		var object = {};
-		for (var i = 0; i < objects.length; i++)
+		traverse(object, function (p, config)
 		{
-			object = objects[i];
-			if (Array.isArray(object))
-			{		
-				continue;			
-			}
-			else if (object instanceof THREE.Scene)
+			var url = resolveURL(config.url);
+			if (!url) { return; }
+		
+			var model = {};
+			
+			model.urlInfo = parseURL(url);	
+			model.object = config;
+			model.shouldUpdate = true;
+			model.name = p;
+			model.parent = object;
+			
+			if (config.mtl)
 			{
-				scene = object;
+				var mtl = resolveURL(config.mtl);
+				if (mtl) { model.mtl = parseURL(mtl); }
 			}
-			else
+			
+			parsed.push(model);
+	
+		});
+	
+		return parsed;
+		
+	}
+	
+	function traverse(o,func) 
+	{
+		for (var i in o) 
+		{
+			func.apply(this,[i,o[i]]);  
+			if (o[i] !== null && typeof(o[i])=="object") 
 			{
-				objectToProcess = object;	
+				traverse(o[i],func);
 			}
 		}
-		
-		return objectToProcess;
 	}
 
+	function parseURL(url)
+	{
+		var base = url.slice(0, url.lastIndexOf('/') + 1);
+	
+		if (base === '' || base === null || base === 'undefined') { console.error('UltimateLoader: ' + name + ' failed to load as it must pass a valid url'); return; } //not a valid path
+
+		var file = url.substr(url.lastIndexOf('/') + 1);
+		
+		var fileInfo = file.split('.');
+		var filename = fileInfo[0];
+		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
+
+		var info = {name: filename, ext: fileExt, baseUrl: base, url: url};
+		
+		return info;	
+	}
+	
+	function resolveURL(url) 
+	{
+		if(typeof url !== 'string' || url === '') return false;
+
+		// Absolute URL
+		if(/^https?:\/\//i.test(url)) return url;
+
+		var absoluteUrl = new URL(url, location.href.substring(0, location.href.lastIndexOf('/') + 1));
+		return absoluteUrl.toString();
+	}
+	
+	function setParam(index, value, v)
+	{
+		switch (index) 
+		{
+			case 0: v.x = value; break;
+			case 1: v.y = value; break;
+			case 2: v.z = value; break;
+			case 3: v.w = value; break;
+			default: throw new Error( 'index is out of range: ' + index );
+		}
+	}
+	
 	function Loader()
 	{
 		this.count = 0;
 		this.complete = false;
 		this.size = 0;
+		
+		this.loadedObjects = [];
 	}
 
-	Loader.prototype.load = function(object, callback)
+	Loader.prototype.load = function(toProcess, callback)
 	{
-		this.size = Object.size(object);
+		this.size = toProcess.length;
 		
-		for (var name in object) 
+		for (var i = 0; i < this.size; i++)
 		{
-			var url = object[name].url;
+			var model = toProcess[i];
 			
-			var file = parseURL(url);	
-			if (!file) { console.error('UltimateLoader: ' + name + ' failed to load as it must pass a valid url'); continue; }
+			model.returnPosition = i;
+			model.callback = callbackFunction.bind(this, model, callback);
 			
-			file.model = object[name];
-			file.callback = callbackFunction.bind(this, name, object, callback);
+			if (main.cache)
+			{
+				checkCache(model);
+			}
 			
-			load(file);
-		}	
+			if (!model.fetchFromCache)
+			{
+				load(model);
+			}
+		}
 	}
 	
-	function callbackFunction(name, object, callback, object3d)
+	function checkCache(model)
 	{
-		updateTransforms(object[name], object3d);
-		scene.add(object3d);
+		if (cached[model.urlInfo.url])
+		{
+			var cache = cached[model.urlInfo.url];
+			
+			if (cache.model.object3d)
+			{
+				cloneFromCache(model, cache);
+			}
+			else
+			{
+				cache.toClone.push(model);
+			}		
+			
+			model.fetchFromCache = true;
+		}
+		else
+		{
+			cached[model.urlInfo.url] = { toClone: [], model: model };
+			model.isCache = true;
+		}
+	}
+	
+	function cloneFromCache(model, cache)
+	{
+		model.object3d = cache.model.object3d.clone();
+
+		model.object3d.position.set(0,0,0);
+		model.object3d.rotation.set(0,0,0);
+		model.object3d.quaternion.set(0,0,0,1);
+		model.object3d.scale.set( 1, 1, 1 );
 		
-		object[name] = object3d;
+		model.object3d.traverse(function (child)
+		{
+			if (child instanceof THREE.Mesh)
+			{
+				child.material = child.material.clone();
+			}
+		});
+		
+		model.callback();
+	}
+	
+	function callbackFunction(model, callback)
+	{
+		if (model.isCache)
+		{
+			var needsCloned = cached[model.urlInfo.url].toClone;
+			
+			for (var i = 0; i < needsCloned.length; i++)
+			{
+				cloneFromCache(needsCloned[i], cached[model.urlInfo.url]);
+			}
+		}
+		
+		if (model.shouldUpdate && main.autoTransform)
+		{
+			updateTransforms(model.object, model.object3d);
+			model.parent[model.name] = model.object3d;
+		}
+		
+		if (scene && main.autoLoad)
+		{
+			scene.add(model.object3d);
+		}
+		
+		model.object3d.name = model.name || model.urlInfo.name;
+		
+		this.loadedObjects[model.returnPosition] = model.object3d;
 		
 		this.count++;
 		if (this.count == this.size)
 		{
-			this.complete = true;		
-			callback();
+			this.complete = true;
+			
+			if (this.loadedObjects.length == 1)
+			{
+				callback(this.loadedObjects[0]);
+			}	
+			else
+			{
+				callback(this.loadedObjects);
+			}
+			
+			console.timeEnd('Total');
 		}
 	}
 	
@@ -173,9 +367,50 @@ var UltimateLoader = UltimateLoader || {};
 			{			
 				if (TRANSFORM_TYPES[i] == transformType)
 				{
-					var params = object[transformType].split(' ');
-					
-					loadedModel[transformType].set(parseFloat(params[0]), parseFloat(params[1]), parseFloat(params[2]));
+					var params;
+					if (typeof object[transformType] === 'string')
+					{
+						params = object[transformType].split(' ');
+						
+						for (var k = 0; k < params.length; k++)
+						{
+							setParam(k, parseFloat(params[k]), loadedModel[transformType]);				
+						}
+					}
+					else if (typeof object[transformType] === 'object')
+					{
+						var vec = new THREE.Vector3();
+						
+						var flag = true;
+						for (var axis in object[transformType])
+						{
+							switch (axis)
+							{
+								case 'x': 	
+								case 'y':
+								case 'z':
+									vec[axis] = object[transformType][axis];
+									break;
+									
+								case 'w':
+									var vec4 = new THREE.Vector4();
+									
+									vec4.copy(vec3);
+									vec4.setW(object[transformType][axis])
+									vec = vec4;
+									break;
+									
+								default: 
+									flag = false;
+							}
+						}
+	
+						if (flag)
+						{
+							loadedModel[transformType].copy(vec);		
+							
+						}
+					}
 				}
 			}	
 		}
@@ -188,100 +423,55 @@ var UltimateLoader = UltimateLoader || {};
 	*   param - i - may be null. It's a special case for multiload.
 	*
     */
-	function load(file)
-	{	
-		switch (file.ext)
+	function load(model)
+	{
+		switch (model.urlInfo.ext)
 		{
 			case "obj":
-				loadOBJ(file);
+				loadOBJ(model);
 				break;
 				
 			case "json":
-				loadJSON(file);
+				loadJSON(model);
 				break;
 				
 			case "dae":
-				loadCollada(file);
+				loadCollada(model);
 				break;
 				
 			case "gltf":
-				loadglTF(file);
-				break;
-				
 			case "glb":
-				loadglTF(file);
+				loadglTF(model);
 				break;
 				
-			case "fbx":
-				loadFBX(file);
-				break;
-				
-			case "drc":
-				loadDRACO(file);
-				break;
-				
-			case "png":
-				loadImage(file);
-				break;
-				
-			case "jpg":
-				loadImage(file);
-				break;
-				
+			case "png":	
+			case "jpg":	
 			case "jpeg":
-				loadImage(file);
+				loadImage(model);
 				break;
 				
 			default:
-				console.log("UltimateLoader: File extension -" + file.ext + "- not recognized! Object -" + file.name + "- did not load.");
-				dequeue(); //Move to the next object
+				console.log("UltimateLoader: model.urlInfo extension -" + model.urlInfo.ext + "- not recognized! Object -" + urlInfo.name + "- did not load.");
 				break;
 		}
 	}
 	
    /** 
-	*	parseFilenameFromURL()
-	*	Parses the url into usable info. This will get the base url, filename, and extension.
-	*	
-	*
-    */
-	function parseURL(url)
-	{
-		var base = url.slice(0, url.lastIndexOf('/') + 1);
-		
-		if (base === '' || base === null || base === 'undefined') { return false; } //not a valid path
-
-		var file = url.substr(url.lastIndexOf('/') + 1);
-		
-		var fileInfo = file.split('.');
-		var filename = fileInfo[0];
-		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
-
-		var info = {name: filename, ext: fileExt, baseUrl: base, url: url};
-		
-		return info;	
-	}
-
-   /** 
 	*	loadOBJ()
-	*	.obj file found, attempt to load the .obj and .mtl.
+	*	.obj urlInfo found, attempt to load the .obj and .mtl.
 	*
     */
-	function loadOBJ(file)
+	function loadOBJ(model)
 	{
-		var obj = file.name + '.obj';
-		var mtl = file.name + '.mtl';
-		var mtlBase = file.baseUrl;
+		var obj = model.urlInfo.name + '.obj';
+		var mtl = model.urlInfo.name + '.mtl';
+		var mtlBase = model.urlInfo.baseUrl;
 		
 		//Special case where mtl is provided in specific model
-		if (file.model.mtl)
+		if (model.mtl)
 		{
-			var mtlFile = parseURL(file.model.mtl)
-			if (mtlFile) 
-			{ 
-				mtl = mtlFile.name + '.mtl';
-				mtlBase = mtlFile.baseUrl;
-			}
+			mtl = model.mtl.name + '.mtl';
+			mtlBase = model.mtl.baseUrl;
 		} 
 		else if (sharedMtl) //Sspecial case where mtl is provided for ALL .obj files
 		{
@@ -302,62 +492,62 @@ var UltimateLoader = UltimateLoader || {};
 			var objLoader = new THREE.OBJLoader();
 			
 			objLoader.setMaterials(materials);
-			objLoader.setPath(file.baseUrl);
-
+			objLoader.setPath(model.urlInfo.baseUrl);
+			
 			objLoader.load(obj, function (object)
 			{
-				file.object = object;
-				handleOnLoad(file);
+				model.object3d = object;
+				handleOnLoad(model);
 			}, onProgress, onError);
 		});	
 	}
 
    /** 
 	*	loadJSON()
-	*	.json file found, attempt to load it.
+	*	.json model.urlInfo found, attempt to load it.
 	*
     */
-	function loadJSON(file)
+	function loadJSON(model)
 	{
 		var loader = new THREE.ObjectLoader();
 		
-		loader.load(file.url, function (object) 
+		loader.load(model.urlInfo.url, function (object) 
 		{
-			file.object = object;
-			handleOnLoad(file);
+			model.object3d = object;
+			handleOnLoad(model);
 		}, onProgress, onError);
 	}
 	
    /** 
 	*	loadCollada()
-	*	.dae file found, attempt to load it.
+	*	.dae model.urlInfo found, attempt to load it.
 	*
     */
-	function loadCollada(file)
+	function loadCollada(model)
 	{
 		var loader = new THREE.ColladaLoader();
 		
-		loader.load(file.url, function (collada) 
+		loader.load(model.urlInfo.url, function (collada) 
 		{
 			var object = collada.scene;
 			
-			file.object = object;
-			handleOnLoad(file);
+			model.object3d = object;
+			handleOnLoad(model);
 		}, onProgress, onError);
 	}
 	
 	
    /** 
 	*	loadImage()
-	*	.png or .jpeg file found, attempt to load it.
+	*	.png or .jpeg model.urlInfo found, attempt to load it.
 	*	Adds texture to a plane. User may change the default plane transform via callback.
 	*
     */
-	function loadImage(file)
+	function loadImage(model)
 	{
 		var loader = new THREE.TextureLoader();
 		
-		loader.load(file.url, function(texture) 
+		loader.load(model.urlInfo.url, function(texture) 
 		{	
 			var object = texture;
 			if (main.loadImagesOnPlane)
@@ -371,27 +561,28 @@ var UltimateLoader = UltimateLoader || {};
 				
 			}
 
-			file.object = object;
-			handleOnLoad(file);
+			model.object3d = object;
+			handleOnLoad(model);
 		}, onProgress, onError);
 	}
 	
    /** EXPERIMENTAL
 	*	loadgltf()
-	*	.gltf or .glb file found, attempt to load it.
+	*	.gltf or .glb model.urlInfo found, attempt to load it.
 	*	This one is iffy and doesn't have full proper implementaion. May not work properly.
 	*
     */
-	function loadglTF(file)
+	function loadglTF(model)
 	{
 		var loader = new THREE.GLTFLoader();
 		
-		loader.load(file.url, function(gltf) 
+		loader.load(model.urlInfo.url, function(gltf) 
 		{
 			var object = gltf.scene;
 			
-			file.object = object;
-			handleOnLoad(file);
+			model.object3d = object;
+			
+			handleOnLoad(model);
 		}, onProgress, onError);
 	}
 
@@ -410,22 +601,48 @@ var UltimateLoader = UltimateLoader || {};
 	*	Add the object into the loaded array and run the callback.
 	*
     */
-	function handleOnLoad(file)
+	function handleOnLoad(model)
 	{
-		console.log("UltimateLoader: Object " + file.name + " loaded!");
+		console.log("Object " + model.urlInfo.name + " loaded!");
+		console.log('-------------------------------------------');
 		
-		file.callback(file.object);
+		model.callback();
 	}
 	
 	Object.size = function(obj) 
 	{
 		var size = 0, key;
-		for (key in obj) 
+		for (key in obj)
 		{
 			if (obj.hasOwnProperty(key)) size++;
 		}
 		return size;
 	};
+	
 })(UltimateLoader);
 
 THREE.FileLoader = THREE.FileLoader || THREE.XHRLoader;
+
+AFRAME.registerComponent('ultimate-loader', 
+{
+	schema: 
+	{ 
+		src: { type: 'string', default: '' } 
+	},
+
+	init: function () 
+	{
+		var self = this;
+		
+	},
+	
+	update: function ()
+	{
+		var self = this;
+		
+		UltimateLoader.load(self.data.src).then(function(object)
+		{
+			 self.el.setObject3D('mesh', object);
+		});
+	}
+});

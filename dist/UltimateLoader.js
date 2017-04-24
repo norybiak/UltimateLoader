@@ -70,6 +70,8 @@ var UltimateLoader = UltimateLoader || {};
     */
 	main.multiload = function(urls, callback)
 	{
+		console.time('Time');
+		
 		var objectsLoaded = [];
 		var totalLoaded = 0;
 		
@@ -81,6 +83,8 @@ var UltimateLoader = UltimateLoader || {};
 			if (totalLoaded == urls.length)
 			{
 				callback(objectsLoaded);
+				
+				console.timeEnd('Time');
 			}
 		};
 		
@@ -1674,7 +1678,9 @@ THREE.OBJLoader.prototype = {
 			container.add( mesh );
 
 		}
-
+		
+		console.log('------------ UltimateLoader ---------------');
+		
 		console.timeEnd( 'OBJLoader' );
 
 		return container;
@@ -1818,6 +1824,8 @@ THREE.ColladaLoader = function () {
 	}
 
 	function parse( text, callBack, url ) {
+		
+		console.time( 'ColladaLoader' );
 
 		COLLADA = new DOMParser().parseFromString( text, 'text/xml' );
 		callBack = callBack || readyCallbackFunc;
@@ -1887,6 +1895,9 @@ THREE.ColladaLoader = function () {
 			}
 
 		};
+		
+		console.log('------------ UltimateLoader ---------------');
+		console.timeEnd( 'ColladaLoader' );
 
 		if ( callBack ) {
 
@@ -7324,7 +7335,9 @@ THREE.GLTFLoader = ( function () {
 			} );
 
 			parser.parse( function ( scene, scenes, cameras, animations ) {
-
+				
+				console.log('------------ UltimateLoader ---------------');
+				
 				console.timeEnd( 'GLTFLoader' );
 
 				var glTF = {
