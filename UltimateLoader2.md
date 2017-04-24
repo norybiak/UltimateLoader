@@ -140,6 +140,18 @@ scale: {x: 1, y: 1, z: 1 } OR scale: '1 1 1'
 #### rotation (optional)
 rotation: {x: 0, y: 0, z: 0 } OR rotation: '0 0 0'
 
+You can name your config object whatever you want. Each property inside the object is an object that specifies the information for a particular model. Each model name must be unique.
+
+```javascript
+var Models =
+{
+	Duck: { url: 'models/Duck.glb' },
+	Chair: { url: 'models/chair.dae', position: '0 5 0', scale: '1 1 1', rotation: '0 0 0' },
+	Celeste: { url: 'models/Celeste.obj', mtl: 'models/Other.mtl', position: '0 0 5', scale: '1 1 1', rotation: '0 0 0' }
+};
+```
+
+
 ## Accessing your loaded models
 A loader is only useful when you can access your models!
 
