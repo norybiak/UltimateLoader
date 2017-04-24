@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.1.0
+ * version 1.1.1
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -623,29 +623,32 @@ var UltimateLoader = UltimateLoader || {};
 
 THREE.FileLoader = THREE.FileLoader || THREE.XHRLoader;
 
-AFRAME.registerComponent('ultimate-loader', 
+if (window.AFRAME)
 {
-	schema: 
-	{ 
-		src: { type: 'string', default: '' } 
-	},
+	AFRAME.registerComponent('ultimate-loader', 
+	{
+		schema: 
+		{ 
+			src: { type: 'string', default: '' } 
+		},
 
-	init: function () 
-	{
-		var self = this;
-		
-	},
-	
-	update: function ()
-	{
-		var self = this;
-		
-		UltimateLoader.load(self.data.src).then(function(object)
+		init: function () 
 		{
-			 self.el.setObject3D('mesh', object);
-		});
-	}
-});
+			var self = this;
+			
+		},
+		
+		update: function ()
+		{
+			var self = this;
+			
+			UltimateLoader.load(self.data.src).then(function(object)
+			{
+				 self.el.setObject3D('mesh', object);
+			});
+		}
+	});
+}
 /**
  * Loads a Wavefront .mtl file specifying materials
  *
