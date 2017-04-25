@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 0.4.3
+ * version 0.4.5
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -158,7 +158,7 @@ var UltimateLoader = UltimateLoader || {};
     */
 	function load(url, callback, i)
 	{
-		var file = parseFilenameFromURL(url);
+		var file = parseFilenameFromURL(resolveURL(url));
 		file.url = url;
 		file.callback = callback;
 		
@@ -232,11 +232,34 @@ var UltimateLoader = UltimateLoader || {};
 		var fileInfo = file.split('.');
 		var filename = fileInfo[0];
 		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
-
+		
 		var info = {name: filename, ext: fileExt, baseUrl: base};
 		
 		return info;	
 	}
+	
+	function resolveURL( url, path ) 
+	{
+		// Invalid URL
+		if ( typeof url !== 'string' || url === '' )
+			return '';
+
+		// Absolute URL http://,https://,//
+		if ( /^(https?:)?\/\//i.test( url ) ) 
+		{
+			return url;
+		}
+
+		// Data URI
+		if ( /^data:.*,.*$/i.test( url ) ) 
+		{
+			return url;
+		}
+
+		var absoluteUrl = new URL(( path || '' ) + url, location.href.substring(0, location.href.lastIndexOf('/') + 1));
+		return absoluteUrl.toString();
+	}
+	
 
    /** 
 	*	loadOBJ()
@@ -5412,7 +5435,7 @@ THREE.ColladaLoader = function () {
 										if ( altspace && altspace.inClient ) {
 
 											// Defer Texture Image Loading To Native Altspace Client
-											texture = new THREE.Texture( { src: url } );
+											texture = new THREE.Texture( { src: resolveURL(url) } );
 											
 										} else {
 											
@@ -6930,6 +6953,31 @@ THREE.ColladaLoader = function () {
 		}
 
 		return parts.join( '.' );
+
+	}
+	
+	function resolveURL( url, path ) {
+
+		// Invalid URL
+		if ( typeof url !== 'string' || url === '' )
+			return '';
+
+		// Absolute URL http://,https://,//
+		if ( /^(https?:)?\/\//i.test( url ) ) {
+
+			return url;
+
+		}
+
+		// Data URI
+		if ( /^data:.*,.*$/i.test( url ) ) {
+
+			return url;
+
+		}
+
+		var absoluteUrl = new URL(( path || '' ) + url, location.href.substring(0, location.href.lastIndexOf('/') + 1));
+		return absoluteUrl.toString();
 
 	}
 

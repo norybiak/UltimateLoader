@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.1.1
+ * version 1.1.3
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -209,6 +209,8 @@ var UltimateLoader = UltimateLoader || {};
 		var fileInfo = file.split('.');
 		var filename = fileInfo[0];
 		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
+		
+		console.log(base);
 
 		var info = {name: filename, ext: fileExt, baseUrl: base, url: url};
 		
@@ -5669,7 +5671,7 @@ THREE.ColladaLoader = function () {
 										if ( altspace && altspace.inClient ) {
 
 											// Defer Texture Image Loading To Native Altspace Client
-											texture = new THREE.Texture( { src: url } );
+											texture = new THREE.Texture( { src: resolveURL(url) } );
 											
 										} else {
 											
@@ -7187,6 +7189,31 @@ THREE.ColladaLoader = function () {
 		}
 
 		return parts.join( '.' );
+
+	}
+	
+	function resolveURL( url, path ) {
+
+		// Invalid URL
+		if ( typeof url !== 'string' || url === '' )
+			return '';
+
+		// Absolute URL http://,https://,//
+		if ( /^(https?:)?\/\//i.test( url ) ) {
+
+			return url;
+
+		}
+
+		// Data URI
+		if ( /^data:.*,.*$/i.test( url ) ) {
+
+			return url;
+
+		}
+
+		var absoluteUrl = new URL(( path || '' ) + url, location.href.substring(0, location.href.lastIndexOf('/') + 1));
+		return absoluteUrl.toString();
 
 	}
 
