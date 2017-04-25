@@ -3,7 +3,7 @@
  * A tool to help load objects in Three.js
  * 
  * @Author NorybiaK
- * version 1.1.5
+ * version 1.1.6
  */
 
 var UltimateLoader = UltimateLoader || {};
@@ -210,8 +210,6 @@ var UltimateLoader = UltimateLoader || {};
 		var filename = fileInfo[0];
 		var fileExt = fileInfo[fileInfo.length-1].toLowerCase(); //We need to make sure we grab the extension and lower the case.
 		
-		console.log(base);
-
 		var info = {name: filename, ext: fileExt, baseUrl: base, url: url};
 		
 		return info;	
