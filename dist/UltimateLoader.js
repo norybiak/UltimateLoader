@@ -309,6 +309,7 @@ var UltimateLoader = UltimateLoader || {};
 		
 		var bomLoader = new THREE.BOMLoader();
 
+		bomLoader.setPath(file.baseUrl);
 		bomLoader.setTexturePath(file.baseUrl);
 		bomLoader.setCrossOrigin(crossOrigin);
 		
