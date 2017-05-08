@@ -209,6 +209,10 @@ var UltimateLoader = UltimateLoader || {};
 			case "jpeg":
 				loadImage(file);
 				break;
+
+			case "bom":
+				loadBOM(file);
+				break;
 				
 			default:
 				console.log("UltimateLoader: File extension -" + file.ext + "- not recognized! Object -" + file.name + "- did not load.");
@@ -292,6 +296,27 @@ var UltimateLoader = UltimateLoader || {};
 				handleOnLoad(file);
 			}, onProgress, onError);
 		});	
+	}
+
+   /** 
+	*	loadBOM()
+	*	.bom file found, attempt to load the .bom.
+	*
+    */
+	function loadBOM(file)
+	{
+		var bom = file.name + '.bom';
+		
+		var bomLoader = new THREE.BOMLoader();
+
+		bomLoader.setTexturePath(file.baseUrl);
+		bomLoader.setCrossOrigin(crossOrigin);
+		
+		bomLoader.load(bom, function(object) 
+		{
+			file.object = object;
+			handleOnLoad(file);
+		}, onProgress, onError);
 	}
 
    /** 

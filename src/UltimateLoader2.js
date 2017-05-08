@@ -449,6 +449,10 @@ var UltimateLoader = UltimateLoader || {};
 			case "jpeg":
 				loadImage(model);
 				break;
+
+			case "bom":
+				loadBOM(model);
+				break;
 				
 			default:
 				console.log("UltimateLoader: model.urlInfo extension -" + model.urlInfo.ext + "- not recognized! Object -" + urlInfo.name + "- did not load.");
@@ -500,6 +504,27 @@ var UltimateLoader = UltimateLoader || {};
 				handleOnLoad(model);
 			}, onProgress, onError);
 		});	
+	}
+
+   /** 
+	*	loadBOM()
+	*	.bom urlInfo found, attempt to load the .bom.
+	*
+    */
+	function loadBOM(model)
+	{
+		var bom = model.urlInfo.name + '.bom';
+		
+		var bomLoader = new THREE.BOMLoader();
+		
+		bomLoader.setTexturePath(model.urlInfo.baseUrl);
+		bomLoader.setCrossOrigin(crossOrigin);
+			
+		bomLoader.load(bom, function(object) 
+		{
+			model.object3d = object;
+			handleOnLoad(model);
+		}, onProgress, onError);
 	}
 
    /** 

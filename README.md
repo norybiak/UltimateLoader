@@ -7,6 +7,7 @@ Currently accepted object file types:
 * .json
 * .dae
 * .gltf
+* .bom
 
 Currently accepted image file types (will be mapped to plane):
 * .jpeg / .jpg
